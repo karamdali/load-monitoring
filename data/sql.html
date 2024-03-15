@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script> -->
+    <link rel="icon" type="image/png" href="logo.jpeg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load Monitoring System</title>
+    <!-- Add your CSS styles or include a stylesheet if needed -->
+    <style>
+        @import url(https://db.onlinewebfonts.com/c/4baee4a2550da10078fd0d6dd9440bc1?family=MTN+Brighter+Sans+Regular); 
+
+        *{
+            font-family: "MTN Brighter Sans Regular"; 
+        }
+
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+        }
+
+        header {
+            padding: 20px;
+            background-color: rgb(255, 201, 5);   
+            box-shadow: 1px 1px 1px #b1911b; 
+        }
+
+        #logo {
+            max-width: 50px;
+            height: auto;
+            vertical-align: middle;
+        }
+
+        #depName {
+            font-size: 1.5em;
+            font-weight: bold;
+            vertical-align: middle;
+            color: #ffffff;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-top: 20px;
+            color: #000000;
+        }
+        h2{
+            font-size: 15px;
+            color: #000000;
+        }
+        .chart-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .chart {
+            width: 45%;
+            margin-bottom: 20px;
+        }
+        #table table{
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            white-space: nowrap;
+        }
+        #table table thead{
+            border:1px solid #253932;
+            border-left: none;
+            border-right: none;
+        }
+
+        @media screen and (max-width: 700px) {
+            .section {
+                flex-direction: column; 
+            }
+            
+            .chart {
+                width: 95%; 
+            }
+        }
+
+    </style>
+
+</head>
+
+<body>
+    <header>
+        <img id="logo" src="logo.jpeg" alt="Logo">
+        <span id="depName">Engineering Affairs</span>
+    </header>
+
+    <h1>Load Monitoring System v0.1</h1>
+    <h2>Historical data</h2>
+    <a href="index.html">Live sensors reading</a>
+    <br><br>
+
+    <section>
+        From: <input type="date" id='from'pattern="\d{4}-\d{2}-\d{2}" onchange="getObject(this);"/> To: <input type=date id='to'pattern="\d{4}-\d{2}-\d{2}"onchange="getObject(this);"/>
+        <button onclick=sendDate() >Retrive data</button>
+    </section>
+    <br><br>
+    <section id = table>
+    <table >
+        <thead>
+        <tr>
+          <th>ID</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Voltage</th>
+          <th>Current</th>
+          <th>Temperature</th>
+        </tr>
+        </thead >
+        <tbody id="result">
+        </tbody>
+    </table>
+    </section>
+
+
+</body>
+<script>
+var Socket;
+
+function init() {
+    Socket = new WebSocket('ws://' + window.location.hostname + ':81/');
+    Socket.onmessage = function(event) {
+    processCommand(event);
+    };
+}
+window.onload = function(event) {
+    init();
+}
+function processCommand(event) {
+    let table = document.getElementById("result");
+    var obj = JSON.parse(event.data);
+    var type = obj.type;
+    if(type.localeCompare("query") == 0){
+        table.innerHTML +=`
+        <tr>
+            <td>${obj.id}</td>
+            <td>${obj.date}</td>
+            <td>${obj.time}</td>
+            <td>${obj.volt}</td>
+            <td>${obj.curr}</td>
+            <td>${obj.temp}</td>
+        </tr>`
+    }
+
+}
+
+function getObject(object)
+{
+  console.log(object.value); 
+}
+
+function sendDate(){
+    var msg = {"from":document.getElementById('from').value,"to":document.getElementById('to').value};
+    Socket.send(JSON.stringify(msg));
+    console.log(msg) ;
+}
+
+</script>

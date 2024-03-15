@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+    <link rel="icon" type="image/png" href="logo.jpeg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load Monitoring System</title>
+    <!-- Add your CSS styles or include a stylesheet if needed -->
+    <style>
+        @import url(https://db.onlinewebfonts.com/c/4baee4a2550da10078fd0d6dd9440bc1?family=MTN+Brighter+Sans+Regular); 
+
+        *{
+            font-family: "MTN Brighter Sans Regular"; 
+        }
+
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+        }
+
+        header {
+            padding: 20px;
+            background-color: rgb(255, 201, 5);   
+            box-shadow: 1px 1px 1px #b1911b; 
+        }
+
+        #logo {
+            max-width: 50px;
+            height: auto;
+            vertical-align: middle;
+        }
+
+        #depName {
+            font-size: 1.5em;
+            font-weight: bold;
+            vertical-align: middle;
+            color: #ffffff;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-top: 20px;
+            color: #000000;
+        }
+        h2{
+            font-size: 15px;
+            color: #000000;
+        }
+        .chart-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .chart {
+            width: 45%;
+            margin-bottom: 20px;
+        }
+        @media screen and (max-width: 700px) {
+            .section {
+                flex-direction: column; 
+            }
+            
+            .chart {
+                width: 95%; 
+            }
+        }
+
+    </style>
+
+</head>
+
+<body>
+    <header>
+        <img id="logo" src="logo.jpeg" alt="Logo">
+        <span id="depName">Engineering Affairs</span>
+    </header>
+
+    <h1>Load Monitoring System v0.1</h1>
+    <h2>Live sensors reading </h2>
+    <a href="sql.html"> Get historical data</a>
+    <div class="chart-container">
+
+
+      <canvas class="chart" id="current" style="width:100%;max-width:700px"></canvas>
+      <canvas class="chart" id="voltage" style="width:100%;max-width:700px"></canvas>
+      <canvas class="chart" id="temperature" style="width:100%;max-width:700px"></canvas>
+    </div>
+
+
+    
+</body>
+
+<script>
+    const yValues = [0,0,0,0,0,0,0,0,0,0,0];
+    const xValues = [1,2,3,4,5,6,7,8,9,10,11];
+    var voltChart = new Chart("voltage", {
+      type: "line",
+      data: {
+        labels: xValues,
+        datasets: [{
+          fill: false,
+          lineTension: 0,
+          backgroundColor: "rgba(255,201,5,1)",
+          borderColor: "rgba(255,201,5,0.5)",
+          data: yValues
+        }]
+      },
+      options: {
+        title: {
+            display: true,
+            text: 'Battery Voltage'
+        },   
+        legend: {display: false},
+        scales: {
+          yAxes: [{ticks: {min: 0, max:25}}],
+        }
+      }
+    });
+
+
+    var currChart = new Chart("current", {
+      type: "line",
+      data: {
+        labels: xValues,
+        datasets: [{
+          fill: false,
+          lineTension: 0,
+          backgroundColor: "rgba(255,201,5,1)",
+          borderColor: "rgba(255,201,5,0.5)",
+          data: yValues
+        }]
+      },
+      options: {
+        title: {
+            display: true,
+            text: 'Load/charge Current'
+        },   
+        legend: {display: false},
+        scales: {
+          yAxes: [{ticks: {min: -25, max:+25}}],
+        }
+      }
+    });
+
+    var tempChart = new Chart("temperature", {
+      type: "line",
+      data: {
+        labels: xValues,
+        datasets: [{
+          fill: false,
+          lineTension: 0,
+          backgroundColor: "rgba(255,201,5,1)",
+          borderColor: "rgba(255,201,5,0.5)",
+          data: yValues
+        }]
+      },
+      options: {
+        title: {
+            display: true,
+            text: 'Ambient Temperature'
+        },   
+        legend: {display: false},
+        scales: {
+          yAxes: [{ticks: {min: -10, max:100}}],
+        }
+      }
+    });
+    
+    var Socket;
+
+    function init() {
+      Socket = new WebSocket('ws://' + window.location.hostname + ':81/');
+      Socket.onmessage = function(event) {
+      processCommand(event);
+      };
+    }
+    function processCommand(event) {
+      var obj = JSON.parse(event.data);
+      var type = obj.type;
+      if (type.localeCompare("update_volt") == 0) {  
+        console.log(obj.data); 
+        voltChart.data.datasets[0].data = obj.data;
+        voltChart.data.labels = obj.time;
+        voltChart.update();
+      }
+      else if (type.localeCompare("update_curr") == 0) {
+        console.log(obj.data); 
+        currChart.data.datasets[0].data = obj.data;
+        currChart.data.labels = obj.time;
+        currChart.update();
+      }
+      else if (type.localeCompare("update_temp") == 0) {
+        console.log(obj.data); 
+        tempChart.data.datasets[0].data = obj.data;
+        tempChart.data.labels = obj.time;
+        tempChart.update();
+      }
+    }
+
+    window.onload = function(event) {
+      init();
+    }
+    </script>
+</html>
+
