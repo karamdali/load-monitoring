@@ -8,7 +8,7 @@
 
 
 
-//used to fix a funny bug ;)
+//Used to fix a funny bug ;)
 #define TRACE() \
   Serial.print(__FILE__);\
   Serial.print(":");\
@@ -35,7 +35,7 @@
 #include <Ticker.h>  
 
 
-#define DEBUGE 1          //comment this line when no debuginig is needed!
+#define DEBUGE 1          //Comment this line when no debuginig is needed!
 
 //I2C slaves addresses
 #define LCD_ADR 0x27      //lcd    address is 0x27
@@ -49,6 +49,7 @@
 #define LCD_ROW 2
 #define LCD_COLUMN 16
 
+//This value determines how many sensor readings are taken and averaged to produce a single measurement
 #define AVG_FILTER 10 
 
 //SDcard SPI
@@ -65,8 +66,8 @@ _________________________
 const int MISO_PIN = 19, MOSI_PIN = 23,SCK_PIN = 18,CS_PIN=5;
 
 //Wifi connection info
-const char* ssid       = "Redmi Note 10 Pro";
-const char* password   = "qwert456";
+const char* ssid       = "WIFISSID";  // CHANGE THIS!
+const char* password   = "WIFIPASSWORD";  // CHANGE THIS!
 
 //NTP server info
 const char* ntpServer = "pool.ntp.org";
@@ -227,9 +228,9 @@ void sendJsonArray(String type, float sensorValue[] , char timeValues[][25] );
 
 //the function that excutes every 30 seconds:
 //1-get new data.
-//2-save the data in the data base.
+//2-save the data in the SQLlite database.
 //3-update buffer.
-//4-broadcast the new data to all clients.
+//4-broadcast the new data to all clients over websocket.
 void repeatedFunction();
 
 void setup() {
@@ -269,7 +270,7 @@ void setup() {
   //NOTE: in this prototype we ignore the ALERT functionality of the TMP102 sensor
   LCDmessege("Connected to TMP102!\0",lcd,LCD_COLUMN,2000);
   temp_sensor.setExtendedMode(0);   //we only need to measure temperature in the range of -55C to +128C
-  temp_sensor.setConversionRate(2); //the frequency of reading new teperature by the sensor 2 means 4Hz it's the default setting
+  temp_sensor.setConversionRate(2); //the frequency of reading new teperature by the sensor. 2 means 4Hz it's the default setting
 
   #ifdef DEBUGE
   Serial.println("Connected to TMP102!\0");
@@ -316,7 +317,7 @@ void setup() {
   }
 
 
-  //define What the webserver needs to do
+  //define What the webserver needs to do for each URL
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {    
     request->send(SPIFFS, "/index.html", "text/html");
   });
@@ -590,8 +591,9 @@ int getNumberOfRecords(sqlite3* db) {
         lastRecordId = sqlite3_column_int(statement, 0);
     }
 
-    sqlite3_finalize(statement);
     //sqlite3_close(db);
+    sqlite3_finalize(statement);
+    
     #ifdef DEBUGE
       Serial.println("___getNumberOfRecords()_____");
       Serial.println(lastRecordId+1);
@@ -730,7 +732,7 @@ String getSQLquery(uint8_t * payload){
   return sql;
 }
 
-//function that take the same arguments and it is excuted when the websockent will handl an events.
+//function that takes the same arguments and it is excuted when the websockent will handl an events.
 void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length) {    
   switch (type) {                                     //switch on the type of information sent
     case WStype_DISCONNECTED:                         //if a client is disconnected then type == WStype_DISCONNECTED
