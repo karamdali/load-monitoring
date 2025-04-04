@@ -1,4 +1,4 @@
-# Load Monitoring System - ESP32 Based
+# Load Monitoring System - an ESP32 web-app over WebSocket server
 
 ### Overview
 
